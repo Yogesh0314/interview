@@ -1,0 +1,61 @@
+name: InterviewAI CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install Backend Dependencies
+      working-directory: ./backend
+      run: npm ci
+
+    # Uncomment when tests are added
+    # - name: Run Backend Tests
+    #   working-directory: ./backend
+    #   run: npm test
+
+    - name: Install Frontend Dependencies
+      working-directory: ./frontend
+      run: npm ci --legacy-peer-deps
+
+    - name: Build Frontend
+      working-directory: ./frontend
+      run: npm run build
+
+  docker-build:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Build Backend Docker Image
+      run: docker build -t interview-ai-backend ./backend
+
+    - name: Build Frontend Docker Image
+      run: docker build -t interview-ai-frontend ./frontend
+
+    # In a real pipeline, you would log into DockerHub or AWS ECR and push the images:
+    # - name: Login to DockerHub
+    #   uses: docker/login-action@v2
+    #   with:
+    #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+    #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+    # - name: Push Backend Image
+    #   run: docker tag interview-ai-backend myorg/interview-ai-backend:latest && docker push myorg/interview-ai-backend:latest
+    # - name: Push Frontend Image
+    #   run: docker tag interview-ai-frontend myorg/interview-ai-frontend:latest && docker push myorg/interview-ai-frontend:latest
