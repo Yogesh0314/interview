@@ -97,8 +97,38 @@ export const analyzeATS = async (req, res) => {
 
     let resumeText = rawText;
     if (req.file) {
-      const pdfData = await pdfParse(req.file.buffer);
-      resumeText = pdfData.text;
+      const originalLog = console.log;
+      const originalWarn = console.warn;
+      const originalError = console.error;
+
+      // Mute pdf-parse warnings to prevent log spamming
+      console.log = (...args) => {
+        const msg = args.join(' ');
+        if (!msg.includes('TT: CALL') && !msg.includes('invalid function id')) {
+          originalLog(...args);
+        }
+      };
+      console.warn = (...args) => {
+        const msg = args.join(' ');
+        if (!msg.includes('TT: CALL') && !msg.includes('invalid function id')) {
+          originalWarn(...args);
+        }
+      };
+      console.error = (...args) => {
+        const msg = args.join(' ');
+        if (!msg.includes('TT: CALL') && !msg.includes('invalid function id')) {
+          originalError(...args);
+        }
+      };
+
+      try {
+        const pdfData = await pdfParse(req.file.buffer);
+        resumeText = pdfData.text;
+      } finally {
+        console.log = originalLog;
+        console.warn = originalWarn;
+        console.error = originalError;
+      }
     }
 
     if (!resumeText) {

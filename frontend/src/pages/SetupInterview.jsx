@@ -451,28 +451,44 @@ export default function SetupInterview() {
                 <div className="flex justify-around py-2">
                   <ScoreRing
                     value={atsResult.atsScore}
-                    label={jobDescription.trim() ? 'JD Match' : 'ATS Score'}
+                    label={atsResult.mode === 'resume_only' ? 'Resume ATS Readiness' : 'Job Match Score'}
                     color="#6366f1"
                   />
-                  <ScoreRing
-                    value={atsResult.difficultyReadiness}
-                    label={`${difficulty} Readiness`}
-                    color={difficulty === 'Hard' ? '#f43f5e' : difficulty === 'Easy' ? '#10b981' : '#f59e0b'}
-                  />
+                  {atsResult.mode !== 'resume_only' && (
+                    <ScoreRing
+                      value={atsResult.difficultyReadiness}
+                      label={`${difficulty} Readiness`}
+                      color={difficulty === 'Hard' ? '#f43f5e' : difficulty === 'Easy' ? '#10b981' : '#f59e0b'}
+                    />
+                  )}
                 </div>
 
                 {/* Interview Readiness badge */}
-                {atsResult.interviewReadiness && (() => {
-                  const cfg = readinessConfig[atsResult.interviewReadiness] || readinessConfig.Moderate;
-                  return (
-                    <div className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border ${cfg.bg}`}>
-                      <span className="text-xs font-semibold text-neutral-300">Interview Readiness</span>
-                      <span className={`text-xs font-black ${cfg.color}`}>
-                        {cfg.icon} {atsResult.interviewReadiness}
-                      </span>
-                    </div>
-                  );
-                })()}
+                {atsResult.mode === 'resume_only' ? (
+                  <div className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border ${
+                    atsResult.atsScore >= 90 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' :
+                    atsResult.atsScore >= 70 ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' :
+                    atsResult.atsScore >= 60 ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' :
+                    'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                  }`}>
+                    <span className="text-xs font-semibold text-neutral-300">ATS Readiness Status</span>
+                    <span className="text-xs font-black">
+                      {atsResult.rating}
+                    </span>
+                  </div>
+                ) : (
+                  atsResult.interviewReadiness && (() => {
+                    const cfg = readinessConfig[atsResult.interviewReadiness] || readinessConfig.Moderate;
+                    return (
+                      <div className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border ${cfg.bg}`}>
+                        <span className="text-xs font-semibold text-neutral-300">Interview Readiness</span>
+                        <span className={`text-xs font-black ${cfg.color}`}>
+                          {cfg.icon} {atsResult.interviewReadiness}
+                        </span>
+                      </div>
+                    );
+                  })()
+                )}
 
                 {/* Section scores */}
                 {atsResult.sectionScores && (
@@ -487,27 +503,31 @@ export default function SetupInterview() {
                 )}
 
                 {/* Keywords */}
-                <div>
-                  <h4 className="section-label mb-2">Keyword Matches</h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {atsResult.keywordMatches?.map((kw, i) => (
-                      <span key={i} className="keyword-chip bg-emerald-500/10 border-emerald-500/30 text-emerald-400">
-                        ✓ {kw}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                {atsResult.mode !== 'resume_only' && (
+                  <>
+                    <div>
+                      <h4 className="section-label mb-2">Keyword Matches</h4>
+                      <div className="flex flex-wrap gap-1.5">
+                        {atsResult.keywordMatches?.map((kw, i) => (
+                          <span key={i} className="keyword-chip bg-emerald-500/10 border-emerald-500/30 text-emerald-400">
+                            ✓ {kw}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
 
-                <div>
-                  <h4 className="section-label mb-2">Missing Keywords</h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {atsResult.missingKeywords?.map((kw, i) => (
-                      <span key={i} className="keyword-chip bg-rose-500/10 border-rose-500/30 text-rose-400">
-                        ✗ {kw}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                    <div>
+                      <h4 className="section-label mb-2">Missing Keywords</h4>
+                      <div className="flex flex-wrap gap-1.5">
+                        {atsResult.missingKeywords?.map((kw, i) => (
+                          <span key={i} className="keyword-chip bg-rose-500/10 border-rose-500/30 text-rose-400">
+                            ✗ {kw}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {/* Strengths & Weaknesses */}
                 <div className="grid grid-cols-1 gap-3">
