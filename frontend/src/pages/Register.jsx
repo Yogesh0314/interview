@@ -22,59 +22,64 @@ export default function Register() {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center">
-      <div className="w-full max-w-md p-8 rounded-2xl bg-slate-800/50 border border-slate-700/50 backdrop-blur-xl shadow-2xl">
+    <div className="flex-1 flex items-center justify-center py-10">
+      <div className="w-full max-w-md p-8 sm:p-10 rounded-3xl bg-[#09090b]/90 border border-neutral-800 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.9)]">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-white mb-2">Create an account</h2>
-          <p className="text-slate-400">Start practicing interviews with AI</p>
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 mb-4 shadow-lg shadow-indigo-500/10">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+          </div>
+          <h2 className="text-3xl font-extrabold text-white mb-2 tracking-tight">Create an account</h2>
+          <p className="text-neutral-400 text-sm">Start practicing interviews with AI today</p>
         </div>
         
-        {error && <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/50 text-red-400 text-sm">{error}</div>}
+        {error && <div className="mb-5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/40 text-rose-300 text-sm font-medium">{error}</div>}
 
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Full Name</label>
+            <label className="block text-sm font-semibold text-neutral-300 mb-2">Full Name</label>
             <input 
               type="text" 
               required
               value={name}
               onChange={e => setName(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-900/50 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+              className="glass-input w-full px-4 py-3 rounded-xl"
               placeholder="John Doe"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
+            <label className="block text-sm font-semibold text-neutral-300 mb-2">Email Address</label>
             <input 
               type="email" 
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-900/50 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+              className="glass-input w-full px-4 py-3 rounded-xl"
               placeholder="you@example.com"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+            <label className="block text-sm font-semibold text-neutral-300 mb-2">Password</label>
             <input 
               type="password" 
               required
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-900/50 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+              className="glass-input w-full px-4 py-3 rounded-xl"
               placeholder="••••••••"
             />
           </div>
           <button 
             type="submit" 
-            className="w-full py-3 px-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white rounded-xl font-medium shadow-lg shadow-indigo-500/25 transition-all active:scale-[0.98]"
+            className="btn-primary w-full py-3.5 px-4 font-bold text-base mt-2"
           >
-            Sign Up
+            Create Account
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-400">
-          Already have an account? <Link to="/login" className="text-indigo-400 hover:text-indigo-300 font-medium">Log in</Link>
+        <p className="mt-8 text-center text-sm text-neutral-400">
+          Already have an account? <Link to="/login" className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">Sign in</Link>
         </p>
       </div>
     </div>

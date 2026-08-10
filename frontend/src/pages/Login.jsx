@@ -7,7 +7,6 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -22,48 +21,53 @@ export default function Login() {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center">
-      <div className="w-full max-w-md p-8 rounded-2xl bg-slate-800/50 border border-slate-700/50 backdrop-blur-xl shadow-2xl">
+    <div className="flex-1 flex items-center justify-center py-10">
+      <div className="w-full max-w-md p-8 sm:p-10 rounded-3xl bg-[#09090b]/90 border border-neutral-800 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.9)]">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-white mb-2">Welcome back</h2>
-          <p className="text-slate-400">Log in to continue your interview prep</p>
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 mb-4 shadow-lg shadow-indigo-500/10">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+            </svg>
+          </div>
+          <h2 className="text-3xl font-extrabold text-white mb-2 tracking-tight">Welcome back</h2>
+          <p className="text-neutral-400 text-sm">Sign in to access your interview practice sessions</p>
         </div>
         
-        {error && <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/50 text-red-400 text-sm">{error}</div>}
+        {error && <div className="mb-5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/40 text-rose-300 text-sm font-medium">{error}</div>}
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
+            <label className="block text-sm font-semibold text-neutral-300 mb-2">Email Address</label>
             <input 
               type="email" 
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-900/50 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+              className="glass-input w-full px-4 py-3 rounded-xl"
               placeholder="you@example.com"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+            <label className="block text-sm font-semibold text-neutral-300 mb-2">Password</label>
             <input 
               type="password" 
               required
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-900/50 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+              className="glass-input w-full px-4 py-3 rounded-xl"
               placeholder="••••••••"
             />
           </div>
           <button 
             type="submit" 
-            className="w-full py-3 px-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white rounded-xl font-medium shadow-lg shadow-indigo-500/25 transition-all active:scale-[0.98]"
+            className="btn-primary w-full py-3.5 px-4 font-bold text-base mt-2"
           >
             Sign In
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-400">
-          Don't have an account? <Link to="/register" className="text-indigo-400 hover:text-indigo-300 font-medium">Sign up</Link>
+        <p className="mt-8 text-center text-sm text-neutral-400">
+          Don't have an account? <Link to="/register" className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">Create an account</Link>
         </p>
       </div>
     </div>
