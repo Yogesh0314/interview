@@ -20,10 +20,19 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// CORS configuration
+const defaultOrigins = ['http://localhost', 'http://localhost:80', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://127.0.0.1'];
+const envOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) : [];
+const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])];
+
 app.use(helmet());
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
   credentials: true
 }));
 app.use(express.json());
@@ -39,9 +48,16 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/pdf', pdfRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Basic health route
-app.get('/', (req, res) => {
-    res.send('Interview AI Backend API Running');
+// Health check endpoint
+app.get(['/', '/health', '/api/health'], (req, res) => {
+    const dbState = mongoose.connection.readyState;
+    const dbStatus = dbState === 1 ? 'connected' : dbState === 2 ? 'connecting' : 'disconnected';
+    const isHealthy = dbState === 1;
+    res.status(isHealthy ? 200 : 503).json({
+        status: isHealthy ? 'UP' : 'DOWN',
+        database: dbStatus,
+        timestamp: new Date().toISOString()
+    });
 });
 
 // Error Handling Middlewares
@@ -55,7 +71,26 @@ mongoose.connect(mongoUri)
 .then(() => console.log('✅ Connected to MongoDB successfully'))
 .catch((err) => console.error('❌ MongoDB connection error:', err));
 
-// Start Server
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+// Start Server listening on 0.0.0.0
+const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
 });
+
+// Graceful Shutdown
+const gracefulShutdown = (signal) => {
+    console.log(`Received ${signal}. Shutting down gracefully...`);
+    server.close(() => {
+        console.log('HTTP server closed.');
+        mongoose.connection.close(false).then(() => {
+            console.log('MongoDB connection closed.');
+            process.exit(0);
+        }).catch((err) => {
+            console.error('Error closing MongoDB connection:', err);
+            process.exit(1);
+        });
+    });
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+

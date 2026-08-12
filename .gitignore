@@ -26,3 +26,19 @@ build/
 
 # Local AI/editor configuration
 .continue/
+
+# Temporary development test files (untracked but preserved locally)
+test_ai_ats_repeat.js
+test_interviewer_turn.js
+test_growth_analysis.js
+backend/test_ai_ats_repeat.js
+backend/test_interviewer_turn.js
+backend/test_growth_analysis.js
+backend/test_admin_auth.js
+backend/test_ai.js
+backend/test_gradual_interview.js
+backend/test_import.js
+backend/test_pdf.js
+backend/test_pdf2.js
+backend/test_pdf3.js
+backend/test_setup.js

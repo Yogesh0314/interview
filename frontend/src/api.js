@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// In production (served via Nginx), API requests use relative paths (/api/...)
+// In local dev mode (Vite), fallback to http://localhost:5000 if VITE_API_URL is not set
+export const API_BASE_URL = import.meta.env.VITE_API_URL !== undefined 
+  ? import.meta.env.VITE_API_URL 
+  : (import.meta.env.MODE === 'production' ? '' : 'http://localhost:5000');
 
 const api = axios.create({
   baseURL: API_BASE_URL,
