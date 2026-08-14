@@ -818,7 +818,7 @@ export function computeResumeOnlyScores(resumeData, rawResumeText) {
   const contactScore = calculateResumeOnlyContactScore(resumeData);
   
   // Final weighted sum
-  const finalScore = Math.round(
+  let finalScore = Math.round(
       parseabilityScore * CONFIG.RESUME_ONLY_WEIGHTS.parseability
     + structureScore * CONFIG.RESUME_ONLY_WEIGHTS.structure
     + skillsScore * CONFIG.RESUME_ONLY_WEIGHTS.skills
@@ -828,6 +828,34 @@ export function computeResumeOnlyScores(resumeData, rawResumeText) {
     + educationScore * CONFIG.RESUME_ONLY_WEIGHTS.education
     + contactScore * CONFIG.RESUME_ONLY_WEIGHTS.contact
   );
+  
+  // Content-Aware Bounded Penalty Guard for genuinely empty resumes
+  let skillsCount = 0;
+  if (resumeData.skills && typeof resumeData.skills === 'object') {
+    Object.values(resumeData.skills).forEach(list => {
+      if (Array.isArray(list)) {
+        skillsCount += list.filter(s => s && String(s).trim().length > 0).length;
+      }
+    });
+  }
+  const expCount = (resumeData.experience && Array.isArray(resumeData.experience)) 
+    ? resumeData.experience.filter(j => j && Object.keys(j).length > 0).length 
+    : 0;
+  const projCount = (resumeData.projects && Array.isArray(resumeData.projects)) 
+    ? resumeData.projects.filter(p => p && Object.keys(p).length > 0).length 
+    : 0;
+  const eduCount = (resumeData.education && Array.isArray(resumeData.education)) 
+    ? resumeData.education.filter(e => e && Object.keys(e).length > 0).length 
+    : 0;
+  const certsCount = (resumeData.certifications && Array.isArray(resumeData.certifications)) 
+    ? resumeData.certifications.filter(c => c && String(c).trim().length > 0).length 
+    : 0;
+
+  const isGenuinelyEmpty = (skillsCount === 0) && (expCount === 0) && (projCount === 0) && (eduCount === 0) && (certsCount === 0);
+
+  if (isGenuinelyEmpty) {
+    finalScore = Math.min(finalScore, 10);
+  }
   
   const rating = getResumeOnlyMatchRating(finalScore);
   const formattedEvidence = resumeSkillsWithEvidence.map(s => ({

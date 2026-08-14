@@ -562,7 +562,9 @@ const resumeOnlyScenarios = [
     rawText: 'Just some text here.',
     asserts: (res) => {
       assert.strictEqual(res.mode, 'resume_only');
-      assert.ok(res.overallScore < 50, `Expected low score, got ${res.overallScore}`);
+      assert.ok(res.overallScore <= 10, `Expected capped empty score <= 10, got ${res.overallScore}`);
+      assert.strictEqual(res.breakdown.parseability, 100, 'Component parseability score must remain unchanged (100)');
+      assert.strictEqual(res.breakdown.structure, 30, 'Component structure score must remain unchanged (30)');
     }
   },
   {
@@ -647,7 +649,8 @@ const resumeOnlyScenarios = [
     },
     rawText: 'No structure here.',
     asserts: (res) => {
-      assert.ok(res.breakdown.structure <= 50);
+      assert.ok(res.overallScore <= 10, `Expected capped empty score <= 10, got ${res.overallScore}`);
+      assert.strictEqual(res.breakdown.structure, 30, 'Component structure score must remain unchanged (30)');
     }
   },
   {
@@ -766,6 +769,106 @@ const resumeOnlyScenarios = [
     rawText: 'Experienced developer.',
     asserts: (res) => {
       assert.strictEqual(res.breakdown.education, 40);
+    }
+  },
+  {
+    id: 'R19',
+    name: 'Genuinely empty resume - empty guard triggers',
+    resume: {
+      skills: {},
+      experience: [],
+      projects: [],
+      education: [],
+      certifications: [],
+      structureInfo: { hasExperienceSection: false, hasSkillsSection: false, hasEducationSection: false }
+    },
+    rawText: 'Just some text.',
+    asserts: (res) => {
+      assert.ok(res.overallScore <= 10, `Empty resume should be capped <= 10, got ${res.overallScore}`);
+      assert.strictEqual(res.breakdown.parseability, 100);
+      assert.strictEqual(res.breakdown.structure, 30);
+      assert.strictEqual(res.breakdown.skills, 30);
+      assert.strictEqual(res.breakdown.experience, 30);
+      assert.strictEqual(res.breakdown.projects, 40);
+      assert.strictEqual(res.breakdown.achievements, 40);
+      assert.strictEqual(res.breakdown.education, 40);
+      assert.strictEqual(res.breakdown.contact, 30);
+    }
+  },
+  {
+    id: 'R20',
+    name: 'Legitimate fresher - education + skills + projects, no experience',
+    resume: {
+      skills: { languages: ['Python'] },
+      experience: [],
+      projects: [{ title: 'Calc', description: 'Simple python script' }],
+      education: [{ degree: 'BS CS' }]
+    },
+    rawText: 'BS CS graduate. Skills: Python. Projects: Calc.',
+    asserts: (res) => {
+      assert.ok(res.overallScore > 10, `Fresher should not be capped <= 10, got ${res.overallScore}`);
+      assert.strictEqual(res.overallScore, 68);
+    }
+  },
+  {
+    id: 'R21',
+    name: 'Experience but no projects - no empty guard',
+    resume: {
+      skills: { languages: ['Java'] },
+      experience: [{ jobTitle: 'Developer', employer: 'IBM', estimatedYears: 6, responsibilities: ['Wrote Java code'] }],
+      projects: [],
+      education: []
+    },
+    rawText: 'Senior Developer. Skills: Java. Experience at IBM.',
+    asserts: (res) => {
+      assert.ok(res.overallScore > 10, `Experience only should not be capped, got ${res.overallScore}`);
+      assert.strictEqual(res.overallScore, 69);
+    }
+  },
+  {
+    id: 'R22',
+    name: 'Skills only - no empty guard',
+    resume: {
+      skills: { languages: ['Python', 'SQL'] },
+      experience: [],
+      projects: [],
+      education: [],
+      certifications: []
+    },
+    rawText: 'Python and SQL.',
+    asserts: (res) => {
+      assert.ok(res.overallScore > 10, `Skills only should not be capped, got ${res.overallScore}`);
+    }
+  },
+  {
+    id: 'R23',
+    name: 'Education only - no empty guard',
+    resume: {
+      skills: {},
+      experience: [],
+      projects: [],
+      education: [{ degree: 'BS CS', institution: 'MIT' }],
+      certifications: []
+    },
+    rawText: 'Graduated BS CS from MIT.',
+    asserts: (res) => {
+      assert.ok(res.overallScore > 10, `Education only should not be capped, got ${res.overallScore}`);
+    }
+  },
+  {
+    id: 'R24',
+    name: 'Normal complete resume - no empty guard',
+    resume: {
+      headline: 'Senior Full Stack Engineer',
+      skills: { languages: ['TypeScript', 'Python'], databases: ['PostgreSQL'] },
+      experience: [{ jobTitle: 'Software Engineer', employer: 'Google', estimatedYears: 5, responsibilities: ['Designed scalable TypeScript services'], achievements: ['Reduced latency by 40%'] }],
+      projects: [{ title: 'REST API', description: 'Built backend with PostgreSQL and TypeScript', technologies: ['TypeScript', 'PostgreSQL'] }],
+      structureInfo: { hasExperienceSection: true, hasSkillsSection: true, hasEducationSection: true, hasProjectsSection: true, hasClearDates: true, hasClearJobTitles: true },
+      parseabilityInfo: { hasSelectableText: true, hasReadableStructure: true, hasBrokenText: false }
+    },
+    rawText: 'Senior Full Stack Engineer. Skills: TypeScript, Python, PostgreSQL. Experience: Software Engineer at Google. Designed scalable TypeScript services. Reduced latency by 40%.',
+    asserts: (res) => {
+      assert.strictEqual(res.overallScore, 86, `Normal complete resume score must remain unchanged at 86, got ${res.overallScore}`);
     }
   }
 ];

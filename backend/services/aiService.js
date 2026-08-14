@@ -141,29 +141,261 @@ function parseJsonOutput(text) {
   }
 }
 
+function isFallbackEligibleError(error) {
+  if (!error) return false;
+
+  const errString = String(error).toLowerCase();
+  const status = error.status || error.statusCode;
+  const code = error.code;
+
+  // Authentication/configuration issues - do NOT fallback
+  if (
+    status === 401 ||
+    errString.includes('api_key_invalid') ||
+    errString.includes('invalid api key') ||
+    errString.includes('key not valid') ||
+    errString.includes('api key not valid')
+  ) {
+    return false;
+  }
+
+  // Quota / Rate limit (429 / RESOURCE_EXHAUSTED)
+  if (
+    status === 429 ||
+    errString.includes('429') ||
+    errString.includes('resource_exhausted') ||
+    errString.includes('quota') ||
+    errString.includes('rate limit') ||
+    errString.includes('rate_limit')
+  ) {
+    return true;
+  }
+
+  // Transient service errors (502, 503, 504)
+  if (
+    status === 502 ||
+    status === 503 ||
+    status === 504 ||
+    errString.includes('502') ||
+    errString.includes('503') ||
+    errString.includes('504') ||
+    errString.includes('service unavailable') ||
+    errString.includes('bad gateway') ||
+    errString.includes('gateway timeout') ||
+    errString.includes('unavailable')
+  ) {
+    return true;
+  }
+
+  // Network / timeout / connection failures
+  if (
+    code === 'ETIMEDOUT' ||
+    code === 'ECONNRESET' ||
+    code === 'ENOTFOUND' ||
+    code === 'ECONNREFUSED' ||
+    errString.includes('timeout') ||
+    errString.includes('network') ||
+    errString.includes('fetch failed') ||
+    errString.includes('socket hang up') ||
+    errString.includes('econnrefused') ||
+    errString.includes('etimedout')
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function validateAndNormalizeResponse(json, taskType) {
+  if (typeof json !== 'object' || json === null) {
+    throw new Error('Parsed AI response is not an object');
+  }
+
+  if (taskType === 'live_interviewer') {
+    if (!json.aiResponse) {
+      json.aiResponse = json.text || json.message || json.response || JSON.stringify(json);
+    }
+    if ('nextPhase' in json || 'isInterviewComplete' in json) {
+      json.nextPhase = json.nextPhase || 'technical_skills';
+      json.followUpOnSameTopic = typeof json.followUpOnSameTopic === 'boolean' ? json.followUpOnSameTopic : false;
+      json.isInterviewComplete = typeof json.isInterviewComplete === 'boolean' ? json.isInterviewComplete : false;
+      json.difficultyLevel = json.difficultyLevel || 'Medium';
+    }
+  } else if (taskType === 'evaluation') {
+    json.overallScore = Number(json.overallScore) || 5;
+    json.communicationScore = Number(json.communicationScore) || json.overallScore;
+    json.technicalScore = Number(json.technicalScore) || json.overallScore;
+    json.problemSolvingScore = Number(json.problemSolvingScore) || json.overallScore;
+    json.architectureScore = Number(json.architectureScore) || json.overallScore;
+    json.behavioralScore = Number(json.behavioralScore) || json.overallScore;
+    
+    json.strengths = Array.isArray(json.strengths) ? json.strengths : [];
+    while (json.strengths.length < 3) {
+      json.strengths.push('Demonstrated basic competency in the required domain.');
+    }
+    json.growthAreas = Array.isArray(json.growthAreas) ? json.growthAreas : [];
+    while (json.growthAreas.length < 3) {
+      json.growthAreas.push('Continue to deepen practical and theoretical knowledge.');
+    }
+    json.comprehensiveFeedback = json.comprehensiveFeedback || 'Feedback not generated.';
+    json.questionBreakdown = Array.isArray(json.questionBreakdown) ? json.questionBreakdown : [];
+  } else if (taskType === 'ats_resume_parse') {
+    json.name = json.name || '';
+    json.headline = json.headline || '';
+    json.summary = json.summary || '';
+    json.skills = json.skills || {};
+    const skillCategories = ['languages', 'frameworks', 'libraries', 'databases', 'cloud', 'devops', 'softSkills', 'certifications', 'others'];
+    for (const cat of skillCategories) {
+      json.skills[cat] = Array.isArray(json.skills[cat]) ? json.skills[cat] : [];
+    }
+    json.experience = Array.isArray(json.experience) ? json.experience : [];
+    json.projects = Array.isArray(json.projects) ? json.projects : [];
+    json.education = Array.isArray(json.education) ? json.education : [];
+    json.certifications = Array.isArray(json.certifications) ? json.certifications : [];
+    
+    json.structureInfo = json.structureInfo || {};
+    const structureKeys = ['hasExperienceSection', 'hasSkillsSection', 'hasEducationSection', 'hasProjectsSection', 'hasClearDates', 'hasClearJobTitles', 'hasReadableHierarchy'];
+    for (const k of structureKeys) {
+      json.structureInfo[k] = typeof json.structureInfo[k] === 'boolean' ? json.structureInfo[k] : false;
+    }
+
+    json.parseabilityInfo = json.parseabilityInfo || {};
+    const parseabilityKeys = ['hasSelectableText', 'hasReadableStructure', 'hasTables', 'hasColumns', 'hasBrokenText', 'hasHeadersFootersInfo'];
+    for (const k of parseabilityKeys) {
+      json.parseabilityInfo[k] = typeof json.parseabilityInfo[k] === 'boolean' ? json.parseabilityInfo[k] : (k === 'hasSelectableText' || k === 'hasReadableStructure');
+    }
+  } else if (taskType === 'ats_jd_parse') {
+    json.jobTitle = json.jobTitle || '';
+    json.seniority = json.seniority || '';
+    json.requirements = json.requirements || {};
+    json.requirements.required = json.requirements.required || {};
+    json.requirements.preferred = json.requirements.preferred || {};
+    json.requirements.optional = json.requirements.optional || {};
+    
+    const reqCats = ['skills', 'education', 'certifications', 'responsibilities', 'domainKnowledge'];
+    for (const cat of reqCats) {
+      json.requirements.required[cat] = Array.isArray(json.requirements.required[cat]) ? json.requirements.required[cat] : [];
+      json.requirements.preferred[cat] = Array.isArray(json.requirements.preferred[cat]) ? json.requirements.preferred[cat] : [];
+    }
+    json.requirements.optional.skills = Array.isArray(json.requirements.optional.skills) ? json.requirements.optional.skills : [];
+    
+    json.experienceYearsRequired = json.experienceYearsRequired !== undefined ? json.experienceYearsRequired : null;
+    json.criticalRequirements = Array.isArray(json.criticalRequirements) ? json.criticalRequirements : [];
+  } else if (taskType === 'ats_enrichment') {
+    json.summary = json.summary || 'Summary not generated.';
+    json.actionableAdvice = Array.isArray(json.actionableAdvice) ? json.actionableAdvice : [];
+    while (json.actionableAdvice.length < 3) {
+      json.actionableAdvice.push('Tailor resume achievements with relevant metrics.');
+    }
+  }
+
+  return json;
+}
+
+async function callOpenRouter(prompt, taskType, config) {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    throw new Error('OpenRouter API key is missing');
+  }
+
+  const model = process.env.OPENROUTER_MODEL || 'openrouter/free';
+  const baseUrl = process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
+
+  console.log(`[AI OpenRouter] Fallback triggered. Dispatching task: '${taskType}' using model: '${model}'`);
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${apiKey}`,
+    'HTTP-Referer': 'http://localhost:5000',
+    'X-Title': 'InterviewAI',
+  };
+
+  const body = {
+    model: model,
+    messages: [
+      {
+        role: 'user',
+        content: prompt
+      }
+    ],
+    temperature: config.temperature ?? 0.35,
+    top_p: config.topP ?? 0.9,
+    max_tokens: config.maxOutputTokens ?? 1000,
+  };
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+  try {
+    const res = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`OpenRouter HTTP ${res.status}: ${errText}`);
+    }
+
+    const data = await res.json();
+    if (data.error) {
+      throw new Error(`OpenRouter API Error: ${data.error.message || JSON.stringify(data.error)}`);
+    }
+
+    const choice = data.choices?.[0];
+    if (!choice || !choice.message?.content) {
+      throw new Error('OpenRouter response content is empty');
+    }
+
+    const text = choice.message.content;
+    const parsed = parseJsonOutput(text);
+    return parsed;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    console.error(`[AI OpenRouter Error] Task '${taskType}' failed:`, err.message);
+    throw err;
+  }
+}
+
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const generateWithRetry = async (prompt, taskType = 'live_interviewer', retries = 5, delayMs = 3000) => {
   let modelToUse = modelName;
   const config = TASK_CONFIGS[taskType] || TASK_CONFIGS.live_interviewer;
+  const fallbackEnabled = process.env.AI_FALLBACK_ENABLED !== 'false';
+  const hasOpenRouterKey = !!process.env.OPENROUTER_API_KEY;
 
   console.log(`[AI Diagnostic] Dispatching task: '${taskType}' using model: '${modelToUse}' (temp: ${config.temperature})`);
 
-  for (let i = 0; i < retries; i++) {
+  // Max attempts for primary provider
+  const maxAttempts = Math.min(3, retries);
+  let lastError = null;
+
+  for (let i = 0; i < maxAttempts; i++) {
     try {
       const response = await getAIClient().models.generateContent({
         model: modelToUse,
         contents: prompt,
         config: config,
       });
-      return parseJsonOutput(response.text);
+      const parsed = parseJsonOutput(response.text);
+      validateAndNormalizeResponse(parsed, taskType);
+      
+      console.log(`[AI] provider=gemini status=success model=${modelToUse} task=${taskType}`);
+      return parsed;
     } catch (error) {
+      lastError = error;
       const errString = String(error);
       const isRateLimit = error.status === 429 || errString.includes('429') || errString.includes('quota') || errString.includes('RESOURCE_EXHAUSTED');
+      const isTransient = isFallbackEligibleError(error);
 
-      console.warn(`[AI Diagnostic] Task '${taskType}' attempt ${i + 1}/${retries} error (Model: ${modelToUse}):`, error.message || errString);
+      console.warn(`[AI Diagnostic] Task '${taskType}' attempt ${i + 1}/${maxAttempts} error (Model: ${modelToUse}):`, error.message || errString);
 
-      // Model fallback logic to handle strict project quota/daily limits
+      // Model fallback logic to handle strict project quota/daily limits (from gemini-3.6-flash to gemini-2.5-flash)
       if (isRateLimit && modelToUse === 'gemini-3.6-flash') {
         console.warn(`[AI Fallback] Quota exhausted for ${modelToUse} during task '${taskType}'. Falling back to gemini-2.5-flash...`);
         modelToUse = 'gemini-2.5-flash';
@@ -172,27 +404,62 @@ const generateWithRetry = async (prompt, taskType = 'live_interviewer', retries 
         continue;
       }
 
-      if (isRateLimit && i < retries - 1) {
-        const wait = delayMs * (i + 1);
-        console.warn(`[AI Retry] Rate limit hit for task '${taskType}', waiting ${wait}ms...`);
+      // If it is not a transient/fallback-eligible error, fail fast and throw immediately
+      if (!isTransient) {
+        console.error(`[AI Error] Non-retryable error during task '${taskType}':`, error.message || errString);
+        throw error;
+      }
+
+      // Check if we should fallback immediately to OpenRouter
+      if (isTransient && fallbackEnabled && hasOpenRouterKey) {
+        const status = error.status || error.statusCode;
+        const isTransientServiceError = status === 502 || status === 503 || status === 504 || errString.includes('503') || errString.includes('service unavailable');
+        
+        // Fallback immediately on rate limit, timeout, transient service errors, or on the final attempt
+        if (isRateLimit || isTransientServiceError || error.code === 'ETIMEDOUT' || errString.includes('timeout') || i === maxAttempts - 1) {
+          console.warn(`[AI] provider=gemini status=quota_exceeded_or_failed fallback=openrouter error="${error.message || errString}"`);
+          try {
+            const orParsed = await callOpenRouter(prompt, taskType, config);
+            validateAndNormalizeResponse(orParsed, taskType);
+            console.log(`[AI] provider=openrouter model=${process.env.OPENROUTER_MODEL || 'openrouter/free'} status=success task=${taskType} fallback=true`);
+            return orParsed;
+          } catch (orError) {
+            console.error(`[AI] OpenRouter fallback failed:`, orError.message);
+            throw new Error(`AI Service Error: Both Gemini and OpenRouter failed. Gemini: ${error.message || errString}. OpenRouter: ${orError.message}`);
+          }
+        }
+      }
+
+      if (i < maxAttempts - 1) {
+        const wait = isRateLimit ? 1000 : delayMs;
+        console.warn(`[AI Retry] Waiting ${wait}ms before next attempt...`);
         await sleep(wait);
-        continue;
       }
-
-      if (isRateLimit && taskType === 'ats_enrichment') {
-        console.warn('[AI] ATS feedback enrichment skipped — using rule-based feedback.');
-        return null;
-      }
-
-      if (i < retries - 1) {
-        await sleep(delayMs);
-        continue;
-      }
-
-      console.error(`[AI Error] Task '${taskType}' failed after ${retries} attempts:`, errString);
-      throw new Error(`AI API Error (${taskType}): ${errString}`);
     }
   }
+
+  // Final fallback attempt if not triggered yet
+  if (fallbackEnabled && hasOpenRouterKey && isFallbackEligibleError(lastError)) {
+    console.warn(`[AI] Triggering final fallback to OpenRouter after all Gemini attempts failed.`);
+    try {
+      const orParsed = await callOpenRouter(prompt, taskType, config);
+      validateAndNormalizeResponse(orParsed, taskType);
+      console.log(`[AI] provider=openrouter model=${process.env.OPENROUTER_MODEL || 'openrouter/free'} status=success task=${taskType} fallback=true`);
+      return orParsed;
+    } catch (orError) {
+      console.error(`[AI] OpenRouter fallback failed:`, orError.message);
+      throw new Error(`AI Service Error: Both Gemini and OpenRouter failed. Gemini: ${lastError.message || String(lastError)}. OpenRouter: ${orError.message}`);
+    }
+  }
+
+  // If rate limit skipped on enrichment
+  if (lastError && lastError.status === 429 && taskType === 'ats_enrichment') {
+    console.warn('[AI] ATS feedback enrichment skipped — using rule-based feedback.');
+    return null;
+  }
+
+  console.error(`[AI Error] Task '${taskType}' failed:`, lastError.message || String(lastError));
+  throw new Error(`AI API Error (${taskType}): ${lastError.message || String(lastError)}`);
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

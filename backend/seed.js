@@ -16,7 +16,9 @@ const createDefaultUser = async () => {
       });
       console.log('Default user created: test@example.com / password123');
     } else {
-      console.log('Default user already exists: test@example.com / password123');
+      userExists.password = 'password123';
+      await userExists.save();
+      console.log('Default user password updated to: test@example.com / password123');
     }
     process.exit(0);
   } catch (error) {

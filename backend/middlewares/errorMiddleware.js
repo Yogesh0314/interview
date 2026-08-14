@@ -19,7 +19,8 @@ export const errorHandler = (err, req, res, next) => {
   // Handle Zod Validation Errors
   if (err.name === 'ZodError') {
     statusCode = 400;
-    message = err.errors.map(e => e.message).join(', ');
+    const issues = err.issues || err.errors || [];
+    message = issues.map(e => e.message).join(', ');
   }
 
   // Log error (use warn for client auth expirations to keep server logs clean)
