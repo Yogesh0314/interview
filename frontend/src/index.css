@@ -24,11 +24,11 @@ a#spline-logo,
 
 @layer utilities {
   .glass-panel {
-    @apply bg-[#0a0a0c]/85 backdrop-blur-xl border border-neutral-800/80 shadow-[0_16px_40px_rgba(0, 0, 0, 0.8)];
+    @apply bg-[#0a0a0c]/85 backdrop-blur-xl border border-neutral-800/80 shadow-[0_16px_40px_rgba(0,_0,_0,_0.8)];
   }
 
   .glass-panel-hover {
-    @apply bg-[#0a0a0c]/85 backdrop-blur-xl border border-neutral-800/80 shadow-[0_16px_40px_rgba(0, 0, 0, 0.8)] transition-all duration-300 hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99, 102, 241, 0.15)];
+    @apply bg-[#0a0a0c]/85 backdrop-blur-xl border border-neutral-800/80 shadow-[0_16px_40px_rgba(0,_0,_0,_0.8)] transition-all duration-300 hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,_102,_241,_0.15)];
   }
 
   .glass-input {
@@ -36,7 +36,7 @@ a#spline-logo,
   }
 
   .btn-primary {
-    @apply px-6 py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-500 hover:via-purple-500 hover:to-indigo-600 text-white rounded-xl font-semibold shadow-[0_0_25px_rgba(99, 102, 241, 0.35)] hover:shadow-[0_0_35px_rgba(99, 102, 241, 0.55)] transition-all active:scale-95 flex items-center justify-center gap-2 border border-indigo-400/30;
+    @apply px-6 py-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-500 hover:via-purple-500 hover:to-indigo-600 text-white rounded-xl font-semibold shadow-[0_0_25px_rgba(99,_102,_241,_0.35)] hover:shadow-[0_0_35px_rgba(99,_102,_241,_0.55)] transition-all active:scale-95 flex items-center justify-center gap-2 border border-indigo-400/30;
   }
 
   .btn-secondary {
@@ -44,7 +44,7 @@ a#spline-logo,
   }
 
   .stat-card {
-    @apply bg-[#0a0a0c]/85 backdrop-blur-xl border border-neutral-800/80 shadow-2xl rounded-2xl p-5 relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500/40 hover:shadow-[0_12px_40px_rgba(0, 0, 0, 0.5)];
+    @apply bg-[#0a0a0c]/85 backdrop-blur-xl border border-neutral-800/80 shadow-2xl rounded-2xl p-5 relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500/40 hover:shadow-[0_12px_40px_rgba(0,_0,_0,_0.5)];
   }
 
   .section-label {
