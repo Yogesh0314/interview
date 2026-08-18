@@ -63,9 +63,28 @@ const PHASE_ALIASES = {
 // Validate a phase returned by the AI; fall back to normalized current phase.
 export function normalizePhase(raw, current) {
   const normalizedRaw = PHASE_ALIASES[raw] || raw;
-  if (PHASE_ORDER.includes(normalizedRaw)) return normalizedRaw;
   const normalizedCurrent = PHASE_ALIASES[current] || current;
-  return PHASE_ORDER.includes(normalizedCurrent) ? normalizedCurrent : 'technical_skills';
+
+  const validRaw = PHASE_ORDER.includes(normalizedRaw);
+  const validCurrent = PHASE_ORDER.includes(normalizedCurrent);
+
+  if (!validRaw) {
+    return validCurrent ? normalizedCurrent : 'warmup';
+  }
+
+  if (!validCurrent) {
+    return normalizedRaw;
+  }
+
+  const rawIndex = PHASE_ORDER.indexOf(normalizedRaw);
+  const currentIndex = PHASE_ORDER.indexOf(normalizedCurrent);
+
+  // Enforce strict forward-only progression
+  if (rawIndex < currentIndex) {
+    return normalizedCurrent;
+  }
+
+  return normalizedRaw;
 }
 
 // Build the flow context passed to the AI each turn so it can pace the
@@ -103,7 +122,7 @@ const TASK_CONFIGS = {
     responseMimeType: 'application/json',
     temperature: 0.35,
     topP: 0.9,
-    maxOutputTokens: 1000,
+    maxOutputTokens: 4096,
   },
   ats_resume_parse: {
     responseMimeType: 'application/json',
@@ -145,6 +164,12 @@ function isFallbackEligibleError(error) {
   if (!error) return false;
 
   const errString = String(error).toLowerCase();
+  
+  // JSON format errors are fallback-eligible to trigger a retry
+  if (errString.includes('json') || errString.includes('syntaxerror') || errString.includes('parse')) {
+    return true;
+  }
+
   const status = error.status || error.statusCode;
   const code = error.code;
 
@@ -657,10 +682,16 @@ STRICT CONCISE RESPONSE & SINGLE-QUESTION RULES:
 5. NO FEEDBACK OR EXPLANATIONS: Do NOT teach, explain topics, restate their answer, or give feedback.
 
 RULES FOR PHASE PROGRESSION & STATE:
-- Probe high-value claims or concepts from resume or candidate's reply.
-- Valid "nextPhase" values: ${JSON.stringify(PHASE_ORDER)}.
-- "isInterviewComplete": true ONLY if in closing phase after wrap-up or if time limits require closing.
-- "difficultyLevel": "${difficulty}".
+1. You must guide the interview strictly through the 8 sequential stages in order:
+   ${PHASE_ORDER.join(' -> ')}
+2. The current phase is: "${currentPhase}".
+3. For your next phase ("nextPhase"), you may either:
+   - Stay in the current phase ("${currentPhase}") to continue probing the current topic.
+   - Advance to the next sequential phase in the list.
+   - Skip a phase only if the candidate has no relevant information (e.g. skip "internship_experience" if they have no work experience on their resume).
+4. NEVER return to an earlier phase. Once you have moved past a stage, do not go back to it under any circumstances.
+5. "isInterviewComplete": true ONLY if in closing phase after wrap-up or if time limits require closing.
+6. "difficultyLevel": "${difficulty}".
 
 ${askedQuestionsBlock}
 

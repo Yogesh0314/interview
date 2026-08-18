@@ -66,10 +66,10 @@ app.use(errorHandler);
 
 // Database Connection
 const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/interview_ai';
-console.log('Connecting to MongoDB at:', mongoUri);
+console.log('Connecting to MongoDB...');
 mongoose.connect(mongoUri)
 .then(() => console.log('✅ Connected to MongoDB successfully'))
-.catch((err) => console.error('❌ MongoDB connection error:', err));
+.catch((err) => console.error('❌ MongoDB connection error:', err.message || err));
 
 // Start Server listening on 0.0.0.0
 const server = app.listen(PORT, '0.0.0.0', () => {
@@ -94,3 +94,4 @@ const gracefulShutdown = (signal) => {
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
+// Trigger fresh reload of backend server

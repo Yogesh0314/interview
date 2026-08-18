@@ -29,7 +29,13 @@ function AppRoutes() {
       headers: { Authorization: `Bearer ${token}` }
     }).then(res => {
       setUserRole(res.data?.role || 'user');
-    }).catch(() => {});
+    }).catch((err) => {
+      if (err.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userName');
+        window.location.reload();
+      }
+    });
   }, [token]);
 
   if (isInterviewRoom) {

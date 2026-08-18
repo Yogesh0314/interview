@@ -49,7 +49,7 @@ export default function Pricing() {
       }
 
       const options = {
-        key: 'rzp_test_dummy', // Replace with real key in production
+        key: data.key_id || 'rzp_test_dummy',
         amount: data.order.amount,
         currency: data.order.currency,
         name: 'Interview.ai',
@@ -69,7 +69,14 @@ export default function Pricing() {
             navigate('/dashboard');
           } catch (err) {
             console.error(err);
-            alert('Payment verification failed.');
+            if (err.response?.status === 401) {
+              localStorage.removeItem('token');
+              localStorage.removeItem('userName');
+              alert('Session expired. Please log in again.');
+              navigate('/login');
+            } else {
+              alert('Payment verification failed.');
+            }
           }
         },
         theme: {
@@ -81,7 +88,14 @@ export default function Pricing() {
       paymentObject.open();
     } catch (err) {
       console.error(err);
-      alert('Failed to initiate payment.');
+      if (err.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userName');
+        alert('Session expired. Please log in again.');
+        navigate('/login');
+      } else {
+        alert('Failed to initiate payment.');
+      }
     } finally {
       setLoadingPlan(null);
     }

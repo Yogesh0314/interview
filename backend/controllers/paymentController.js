@@ -13,7 +13,8 @@ export const createOrder = async (req, res) => {
       // Mock order creation for local testing without real keys
       return res.json({ 
         order: { id: `order_mock_${Date.now()}`, amount: amount * 100, currency: "INR" }, 
-        plan 
+        plan,
+        key_id
       });
     }
 
@@ -26,7 +27,7 @@ export const createOrder = async (req, res) => {
     };
 
     const order = await rzp.orders.create(options);
-    res.json({ order, plan });
+    res.json({ order, plan, key_id });
   } catch (error) {
     console.error('Create Order Error:', error);
     res.status(500).json({ message: 'Failed to create payment order', error: error.message });
